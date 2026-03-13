@@ -1,0 +1,16 @@
+{
+  "short_name": "Malnad Mane",
+  "name": "Malnad Mane Mess Management",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2652/2652218.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#5A5A40",
+  "background_color": "#fdfcfb"
+}
