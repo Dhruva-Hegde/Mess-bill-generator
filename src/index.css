@@ -1,3 +1,4 @@
+/* Version: 1.0.1 - White Theme Only */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
@@ -6,22 +7,85 @@
   --font-serif: "Libre Baskerville", serif;
   
   --color-brand-primary: #1a1a1a;
-  --color-brand-accent: #5A5A40; /* Olive green for a "Malnad" feel */
+  --color-brand-accent: #5A5A40; /* Olive green */
   --color-brand-bg: #fdfcfb;
 }
 
 @layer base {
   body {
-    @apply bg-brand-bg font-sans text-brand-primary;
+    @apply bg-brand-bg font-sans text-brand-primary transition-colors duration-300;
   }
 }
 
 .card-shadow {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 10px 30px -10px rgba(90, 90, 64, 0.1);
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  @apply bg-white/80 backdrop-blur-xl border border-black/5;
+}
+
+.malnad-pattern {
+  background-image: radial-gradient(var(--color-brand-accent) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.03;
+}
+
+/* Brand gradient text */
+.brand-gradient-text {
+  background: linear-gradient(135deg, var(--color-brand-accent) 0%, #7a7a55 50%, var(--color-brand-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated blobs */
+@keyframes blob-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -20px) scale(1.05); }
+  66%       { transform: translate(-15px, 15px) scale(0.97); }
+}
+@keyframes blob-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(-25px, 20px) scale(1.03); }
+  66%       { transform: translate(20px, -10px) scale(0.98); }
+}
+@keyframes blob-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(15px, 25px) scale(1.06); }
+}
+
+.blob-1 { animation: blob-float-1 12s ease-in-out infinite; }
+.blob-2 { animation: blob-float-2 16s ease-in-out infinite; }
+.blob-3 { animation: blob-float-3 10s ease-in-out infinite; }
+
+/* Floating decorative circles */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes float-med {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+.float-slow { animation: float-slow 7s ease-in-out infinite; }
+.float-med  { animation: float-med  5s ease-in-out infinite; }
+.float-fast { animation: float-fast 3.5s ease-in-out infinite; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-accent/20 rounded-full hover:bg-brand-accent/40 transition-colors;
 }

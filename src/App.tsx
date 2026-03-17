@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// Version: 1.0.1 - White Theme Only
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
@@ -19,81 +20,24 @@ import {
   FileText,
   Edit2,
   Check,
-  X
+  X,
+  Menu,
+  Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// --- Types ---
-
-type MemberType = 'student' | 'job';
-type ExpenseCategory = 'commonMess' | 'common' | 'mess';
-
-interface Member {
-  id: string;
-  name: string;
-  type: MemberType;
-  daysStayed: number;
-}
-
-interface Expense {
-  id: string;
-  amount: number;
-  description: string;
-  date: string;
-  category: ExpenseCategory;
-  isIncome?: boolean;
-}
-
-interface AppSettings {
-  president: string;
-  secretary: string;
-  studentRent: number;
-  jobRent: number;
-  month: string;
-}
-
-// --- Components ---
-
-const Card = ({ children, title, icon: Icon, className = "", headerAction }: { children: React.ReactNode, title: any, icon: any, className?: string, headerAction?: React.ReactNode, key?: any }) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className={`bg-white rounded-[2rem] card-shadow border border-black/5 p-8 ${className}`}
-  >
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-brand-accent/5 rounded-2xl">
-          <Icon className="w-6 h-6 text-brand-accent" />
-        </div>
-        <h2 className="text-xl font-serif font-bold tracking-tight text-brand-primary">{title}</h2>
-      </div>
-      {headerAction}
-    </div>
-    {children}
-  </motion.div>
-);
-
-const TabButton = ({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: any, label: string }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 ${
-      active 
-        ? 'bg-brand-accent text-white shadow-lg shadow-brand-accent/20 scale-105' 
-        : 'text-gray-400 hover:text-brand-accent hover:bg-brand-accent/5'
-    }`}
-  >
-    <Icon className="w-4 h-4" />
-    <span className="text-sm font-semibold tracking-wide">{label}</span>
-  </button>
-);
+import { Card } from './components/ui/Card';
+import { TabButton } from './components/ui/TabButton';
+import { Member, Expense, AppSettings, MemberType, ExpenseCategory } from './types';
+import { DEFAULT_MEMBERS } from './constants';
 
 export default function App() {
   // --- State ---
   const [members, setMembers] = useState<Member[]>(() => {
     const saved = localStorage.getItem('messmate_v2_members');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : DEFAULT_MEMBERS;
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
@@ -115,6 +59,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'expenses' | 'settings'>('dashboard');
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+
+  useEffect(() => {
+    // Ensure dark mode is disabled
+    document.documentElement.classList.remove('dark');
+    console.log('Theme: White Only Mode Active');
+  }, []);
 
   // --- Persistence ---
   useEffect(() => {
@@ -228,26 +178,24 @@ export default function App() {
   };
 
   const resetData = () => {
-    if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-      const defaultSettings = {
-        president: 'Gururaj Hegde',
-        secretary: 'Roshan Bhat',
-        studentRent: 1000,
-        jobRent: 1500,
-        month: 'January - 2026'
-      };
-      
-      setMembers([]);
-      setExpenses([]);
-      setSettings(defaultSettings);
-      
-      localStorage.setItem('messmate_v2_members', JSON.stringify([]));
-      localStorage.setItem('messmate_v2_expenses', JSON.stringify([]));
-      localStorage.setItem('messmate_v2_settings', JSON.stringify(defaultSettings));
-      
-      // Force a reload to ensure everything is clean
-      window.location.reload();
-    }
+    const defaultSettings = {
+      president: 'Gururaj Hegde',
+      secretary: 'Roshan Bhat',
+      studentRent: 1000,
+      jobRent: 1500,
+      month: 'January - 2026'
+    };
+    
+    setMembers(DEFAULT_MEMBERS);
+    setExpenses([]);
+    setSettings(defaultSettings);
+    
+    localStorage.setItem('messmate_v2_members', JSON.stringify(DEFAULT_MEMBERS));
+    localStorage.setItem('messmate_v2_expenses', JSON.stringify([]));
+    localStorage.setItem('messmate_v2_settings', JSON.stringify(defaultSettings));
+    
+    // Force a reload to ensure everything is clean
+    window.location.reload();
   };
 
   const exportData = () => {
@@ -392,38 +340,71 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-primary font-sans selection:bg-brand-accent selection:text-white">
+    <div className="min-h-screen bg-brand-bg text-brand-primary font-sans selection:bg-brand-accent selection:text-white transition-colors duration-300 relative overflow-x-hidden">
+      {/* Decorative Background Graphics */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="malnad-pattern absolute inset-0" />
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-24 w-64 h-64 bg-brand-accent/3 rounded-full blur-3xl" />
+        
+        {/* Abstract Leaf Shape */}
+        <svg className="absolute bottom-0 right-0 w-[40vw] opacity-[0.03] text-brand-accent" viewBox="0 0 200 200" fill="currentColor">
+          <path d="M100 0C100 0 100 100 0 100C0 100 100 100 100 200C100 200 100 100 200 100C200 100 100 100 100 0Z" />
+        </svg>
+      </div>
+
       {/* Header */}
       <header className="glass sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-24 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-brand-accent rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-accent/20">
-              <Calculator className="w-7 h-7" />
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-accent/20">
+              <Home className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-serif font-bold tracking-tight text-brand-accent">Malnad Mane</h1>
-              <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Mess Bill Management</p>
+              <h1 className="text-xl font-serif font-bold tracking-tight text-brand-accent leading-none">Malnad Mane</h1>
+              <p className="text-[9px] text-gray-400 uppercase tracking-[0.15em] font-bold mt-1">Mess Management</p>
             </div>
           </div>
           
-          <nav className="hidden md:flex gap-4">
+          <nav className="hidden lg:flex gap-2">
             <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={Calculator} label="Bill" />
             <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users} label="Members" />
             <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={Receipt} label="Expenses" />
             <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={Settings} label="Settings" />
           </nav>
 
-          {/* Mobile Nav Toggle (Simplified) */}
-          <div className="md:hidden flex gap-2">
-             <button onClick={() => setActiveTab('dashboard')} className={`p-3 rounded-2xl transition-all ${activeTab === 'dashboard' ? 'bg-brand-accent text-white shadow-lg' : 'text-gray-400 hover:bg-brand-accent/5'}`}><Calculator className="w-5 h-5" /></button>
-             <button onClick={() => setActiveTab('members')} className={`p-3 rounded-2xl transition-all ${activeTab === 'members' ? 'bg-brand-accent text-white shadow-lg' : 'text-gray-400 hover:bg-brand-accent/5'}`}><Users className="w-5 h-5" /></button>
-             <button onClick={() => setActiveTab('expenses')} className={`p-3 rounded-2xl transition-all ${activeTab === 'expenses' ? 'bg-brand-accent text-white shadow-lg' : 'text-gray-400 hover:bg-brand-accent/5'}`}><Receipt className="w-5 h-5" /></button>
-             <button onClick={() => setActiveTab('settings')} className={`p-3 rounded-2xl transition-all ${activeTab === 'settings' ? 'bg-brand-accent text-white shadow-lg' : 'text-gray-400 hover:bg-brand-accent/5'}`}><Settings className="w-5 h-5" /></button>
+          <div className="lg:hidden">
+            <button className="p-2 text-brand-accent">
+              <Menu className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      {/* Mobile Bottom Nav */}
+      <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-50 glass rounded-3xl p-2 flex justify-around items-center shadow-2xl border border-white/20">
+        {[
+          { id: 'dashboard', icon: Calculator, label: 'Bill' },
+          { id: 'members', icon: Users, label: 'Members' },
+          { id: 'expenses', icon: Receipt, label: 'Expenses' },
+          { id: 'settings', icon: Settings, label: 'Settings' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${
+              activeTab === tab.id 
+                ? 'bg-brand-accent text-white scale-110 shadow-lg' 
+                : 'text-gray-400'
+            }`}
+          >
+            <tab.icon className="w-5 h-5" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-6 py-12 relative z-10">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && (
             <motion.div 
@@ -707,7 +688,7 @@ export default function App() {
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className="font-bold text-sm">₹{expense.amount.toLocaleString()}</span>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-black">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent">
                                     <Edit2 className="w-3 h-3" />
                                   </button>
                                   <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500">
@@ -783,7 +764,7 @@ export default function App() {
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className="font-bold text-sm">₹{expense.amount.toLocaleString()}</span>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-black">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent">
                                     <Edit2 className="w-3 h-3" />
                                   </button>
                                   <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500">
@@ -868,7 +849,7 @@ export default function App() {
                                   {expense.isIncome ? '-' : ''}₹{expense.amount.toLocaleString()}
                                 </span>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-black">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent">
                                     <Edit2 className="w-3 h-3" />
                                   </button>
                                   <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500">
@@ -950,7 +931,7 @@ export default function App() {
                 </div>
               </Card>
 
-      <Card title="Danger Zone" icon={RotateCcw} className="border-red-100 bg-red-50/20">
+              <Card title="Danger Zone" icon={RotateCcw} className="border-red-100 bg-red-50/20">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                   <div>
                     <p className="font-bold text-red-600 text-lg">Reset All Application Data</p>
