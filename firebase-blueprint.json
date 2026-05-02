@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "Member": {
+      "title": "Member",
+      "description": "A member of the mess",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the member" },
+        "type": { "type": "string", "enum": ["student", "job"], "description": "Type of member" },
+        "daysStayed": { "type": "integer", "description": "Number of days the member stayed" },
+        "groupId": { "type": "string", "description": "ID of the group this member belongs to" }
+      },
+      "required": ["name", "type", "daysStayed", "groupId"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "An expense or income entry",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number", "description": "Amount in INR" },
+        "description": { "type": "string", "description": "Description of the expense" },
+        "date": { "type": "string", "format": "date-time", "description": "Date of the expense" },
+        "category": { "type": "string", "enum": ["commonMess", "common", "mess"], "description": "Category of the expense" },
+        "isIncome": { "type": "boolean", "description": "Whether this is an income entry" },
+        "groupId": { "type": "string", "description": "ID of the group this expense belongs to" }
+      },
+      "required": ["amount", "description", "date", "category", "groupId"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Configuration for the mess bill",
+      "type": "object",
+      "properties": {
+        "president": { "type": "string", "description": "Name of the president" },
+        "secretary": { "type": "string", "description": "Name of the secretary" },
+        "studentRent": { "type": "number", "description": "Rent for students" },
+        "jobRent": { "type": "number", "description": "Rent for job holders" },
+        "month": { "type": "string", "description": "Current month and year" },
+        "groupId": { "type": "string", "description": "ID of the group these settings belong to" }
+      },
+      "required": ["president", "secretary", "studentRent", "jobRent", "month", "groupId"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "groupId": { "type": "string", "description": "The group the user currently belongs to" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "members": { "schema": "Member", "description": "Collection of members" },
+    "expenses": { "schema": "Expense", "description": "Collection of expenses" },
+    "settings": { "schema": "Settings", "description": "Collection of settings" },
+    "users": { "schema": "User", "description": "Collection of users" }
+  }
+}

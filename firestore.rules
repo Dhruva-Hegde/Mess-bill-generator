@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields:
+    //   - email: string (required)
+    //   - displayName: string
+    //   - photoURL: string
+    //   - groupId: string
+    //
+    // Collection: members
+    // Fields:
+    //   - name: string (required, 1-100 chars)
+    //   - type: string (required, enum: ['student', 'job'])
+    //   - daysStayed: number (required, >= 0)
+    //   - groupId: string (required)
+    //
+    // Collection: expenses
+    // Fields:
+    //   - amount: number (required, > 0)
+    //   - description: string (required, 1-200 chars)
+    //   - date: timestamp (required)
+    //   - category: string (required, enum: ['commonMess', 'common', 'mess'])
+    //   - isIncome: bool (optional)
+    //   - groupId: string (required)
+    //
+    // Collection: settings
+    // Fields:
+    //   - president: string (required)
+    //   - secretary: string (required)
+    //   - studentRent: number (required)
+    //   - jobRent: number (required)
+    //   - month: string (required)
+    //   - groupId: string (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "dhruvahegde55@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isMemberOfGroup(groupId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.groupId == groupId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['email', 'displayName', 'photoURL', 'groupId', 'role']) &&
+             data.email is string && isValidEmail(data.email) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('groupId' in data) || (data.groupId is string && data.groupId.size() < 50));
+    }
+
+    function isValidMember(data) {
+      return hasOnlyAllowedFields(['name', 'type', 'daysStayed', 'groupId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.type in ['student', 'job'] &&
+             data.daysStayed is int && data.daysStayed >= 0 &&
+             data.groupId is string;
+    }
+
+    function isValidExpense(data) {
+      return hasOnlyAllowedFields(['amount', 'description', 'date', 'category', 'isIncome', 'groupId']) &&
+             data.amount is number && data.amount > 0 &&
+             data.description is string && data.description.size() > 0 && data.description.size() <= 200 &&
+             data.date is timestamp &&
+             data.category in ['commonMess', 'common', 'mess'] &&
+             (!('isIncome' in data) || data.isIncome is bool) &&
+             data.groupId is string;
+    }
+
+    function isValidSettings(data) {
+      return hasOnlyAllowedFields(['president', 'secretary', 'studentRent', 'jobRent', 'month', 'groupId']) &&
+             data.president is string && data.secretary is string &&
+             data.studentRent is number && data.jobRent is number &&
+             data.month is string && data.groupId is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId && isValidUser(request.resource.data) && (!('role' in request.resource.data) || isAdmin());
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin()) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /members/{memberId} {
+      allow read: if isAuthenticated() && isMemberOfGroup(resource.data.groupId);
+      allow create: if isAuthenticated() && isMemberOfGroup(request.resource.data.groupId) && isValidMember(request.resource.data);
+      allow update: if isAuthenticated() && isMemberOfGroup(resource.data.groupId) && isValidMember(request.resource.data) && request.resource.data.groupId == resource.data.groupId;
+      allow delete: if isAuthenticated() && isMemberOfGroup(resource.data.groupId);
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isAuthenticated() && isMemberOfGroup(resource.data.groupId);
+      allow create: if isAuthenticated() && isMemberOfGroup(request.resource.data.groupId) && isValidExpense(request.resource.data);
+      allow update: if isAuthenticated() && isMemberOfGroup(resource.data.groupId) && isValidExpense(request.resource.data) && request.resource.data.groupId == resource.data.groupId;
+      allow delete: if isAuthenticated() && isMemberOfGroup(resource.data.groupId);
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated() && isMemberOfGroup(resource.data.groupId);
+      allow create: if isAuthenticated() && isMemberOfGroup(request.resource.data.groupId) && isValidSettings(request.resource.data);
+      allow update: if isAuthenticated() && isMemberOfGroup(resource.data.groupId) && isValidSettings(request.resource.data) && request.resource.data.groupId == resource.data.groupId;
+      allow delete: if isAuthenticated() && isMemberOfGroup(resource.data.groupId);
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

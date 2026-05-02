@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", serif;
+  
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-bg: var(--brand-bg);
+  --color-card-bg: var(--card-bg);
+}
+
+:root {
+  --brand-primary: #1e293b;
+  --brand-accent: #059669;
+  --brand-bg: #f8fafc;
+  --card-bg: #ffffff;
+}
+
+.dark {
+  --brand-primary: #f8fafc;
+  --brand-accent: #10b981;
+  --brand-bg: #020617;
+  --card-bg: #0f172a;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-bg font-sans text-brand-primary transition-colors duration-300;
+  }
+}
+
+@keyframes neonPulse {
+  0% { box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.1), inset 0 0 0px rgba(16, 185, 129, 0); }
+  50% { box-shadow: 0 15px 40px -5px rgba(16, 185, 129, 0.3), inset 0 0 10px rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.4); }
+  100% { box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.1), inset 0 0 0px rgba(16, 185, 129, 0); }
+}
+
+.card-shadow {
+  box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card-shadow:hover {
+  animation: neonPulse 2s infinite;
+}
+
+.dark .card-shadow {
+  box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.glass {
+  @apply bg-brand-bg/70 backdrop-blur-2xl border border-white/5 dark:border-white/10;
+}
+
+.malnad-pattern {
+  background-image: radial-gradient(var(--brand-accent) 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.03;
+  animation: movePattern 30s linear infinite;
+}
+
+@keyframes movePattern {
+  0% { background-position: 0 0; }
+  100% { background-position: 24px 24px; }
+}
+
+.dark .malnad-pattern {
+  opacity: 0.05;
+}
+
+/* Brand gradient text */
+.brand-gradient-text {
+  background: linear-gradient(135deg, var(--brand-accent) 0%, #34d399 50%, var(--brand-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated blobs */
+@keyframes blob-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.3; }
+  33%       { transform: translate(60px, -40px) scale(1.1) rotate(15deg); opacity: 0.5; }
+  66%       { transform: translate(-30px, 30px) scale(0.9) rotate(-15deg); opacity: 0.3; }
+}
+@keyframes blob-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1.1) rotate(0deg); opacity: 0.2; }
+  33%       { transform: translate(-50px, 40px) scale(1.2) rotate(-10deg); opacity: 0.4; }
+  66%       { transform: translate(40px, -20px) scale(1) rotate(10deg); opacity: 0.2; }
+}
+
+.blob-1 { animation: blob-float-1 15s ease-in-out infinite; }
+.blob-2 { animation: blob-float-2 20s ease-in-out infinite; }
+.blob-3 { animation: blob-float-1 18s ease-in-out infinite reverse; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-accent/10 rounded-full hover:bg-brand-accent/30 transition-all;
+}
