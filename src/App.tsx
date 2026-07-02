@@ -35,20 +35,204 @@ import { TabButton } from './components/ui/TabButton';
 import { Member, Expense, AppSettings, MemberType, ExpenseCategory } from './types';
 import { DEFAULT_MEMBERS } from './constants';
 
+// --- Safe Helpers for Sandboxed Environments ---
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn('localStorage is not available in this environment:', e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn('localStorage is not available in this environment:', e);
+    }
+  }
+};
+
+const generateId = (): string => {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch (e) {
+    console.warn('crypto.randomUUID is not available in this environment:', e);
+  }
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+const getDefaultExpenses = (): Expense[] => [
+  {
+    id: 'default-cook-salary',
+    amount: 0,
+    description: 'Cook Salary',
+    date: new Date().toISOString(),
+    category: 'commonMess',
+    isIncome: false
+  },
+  {
+    id: 'default-cook-income',
+    amount: 0,
+    description: 'Cook Income',
+    date: new Date().toISOString(),
+    category: 'mess',
+    isIncome: true
+  },
+  {
+    id: 'default-gas',
+    amount: 0,
+    description: 'Gas',
+    date: new Date().toISOString(),
+    category: 'commonMess',
+    isIncome: false
+  },
+  {
+    id: 'default-housemaid',
+    amount: 0,
+    description: 'Housemaid',
+    date: new Date().toISOString(),
+    category: 'commonMess',
+    isIncome: false
+  },
+  {
+    id: 'default-garbage',
+    amount: 0,
+    description: 'Garbage',
+    date: new Date().toISOString(),
+    category: 'commonMess',
+    isIncome: false
+  },
+  {
+    id: 'default-current-bill',
+    amount: 0,
+    description: 'Current bill',
+    date: new Date().toISOString(),
+    category: 'common',
+    isIncome: false
+  },
+  {
+    id: 'default-water-bill',
+    amount: 0,
+    description: 'waterbill',
+    date: new Date().toISOString(),
+    category: 'common',
+    isIncome: false
+  },
+  {
+    id: 'default-paper-bill',
+    amount: 0,
+    description: 'paperbill',
+    date: new Date().toISOString(),
+    category: 'common',
+    isIncome: false
+  },
+  {
+    id: 'default-internet-bill',
+    amount: 0,
+    description: 'Internetbill',
+    date: new Date().toISOString(),
+    category: 'common',
+    isIncome: false
+  },
+  {
+    id: 'default-daily-expenses',
+    amount: 0,
+    description: 'Dailyexpances(secretary+milk)',
+    date: new Date().toISOString(),
+    category: 'mess',
+    isIncome: false
+  },
+  {
+    id: 'default-mess-expenses',
+    amount: 0,
+    description: 'Mess expances',
+    date: new Date().toISOString(),
+    category: 'mess',
+    isIncome: false
+  }
+];
+
+const ensureDefaultExpenses = (existing: Expense[]): Expense[] => {
+  const defaults = getDefaultExpenses();
+  const updated = [...existing];
+  
+  defaults.forEach(defaultExp => {
+    const exists = updated.some(e => 
+      e.category === defaultExp.category && 
+      e.description.toLowerCase().trim() === defaultExp.description.toLowerCase().trim()
+    );
+    if (!exists) {
+      updated.push({
+        ...defaultExp,
+        id: generateId()
+      });
+    }
+  });
+  
+  return updated;
+};
+
 export default function App() {
   // --- State ---
   const [members, setMembers] = useState<Member[]>(() => {
-    const saved = localStorage.getItem('messmate_v2_members');
-    return saved ? JSON.parse(saved) : DEFAULT_MEMBERS;
+    const saved = safeLocalStorage.getItem('messmate_v2_members');
+    let list: Member[] = saved ? JSON.parse(saved) : DEFAULT_MEMBERS;
+
+    const hasChinmay = list.some(m => m.name.toLowerCase() === 'chinmay');
+    const hasRoshan = list.some(m => m.name.toLowerCase() === 'roshan');
+    const hasPrasanna = list.some(m => m.name.toLowerCase() === 'prasanna');
+    const hasKarthik = list.some(m => m.name.toLowerCase() === 'karthik');
+
+    let modified = false;
+    
+    // Convert any legacy 30 days stayed to 0 as the new default
+    list = list.map(m => {
+      if (m.daysStayed === 30) {
+        modified = true;
+        return { ...m, daysStayed: 0 };
+      }
+      return m;
+    });
+
+    if (hasChinmay || hasRoshan) {
+      list = list.filter(m => m.name.toLowerCase() !== 'chinmay' && m.name.toLowerCase() !== 'roshan');
+      modified = true;
+    }
+    if (!hasPrasanna) {
+      list.push({ id: generateId(), name: 'Prasanna', type: 'job', daysStayed: 0 });
+      modified = true;
+    }
+    if (!hasKarthik) {
+      list.push({ id: generateId(), name: 'Karthik', type: 'student', daysStayed: 0 });
+      modified = true;
+    }
+
+    // Always keep lists sorted in A-Z order
+    const originalSortedString = JSON.stringify(list);
+    list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    if (JSON.stringify(list) !== originalSortedString) {
+      modified = true;
+    }
+
+    if (modified) {
+      safeLocalStorage.setItem('messmate_v2_members', JSON.stringify(list));
+    }
+
+    return list;
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('messmate_v2_expenses');
-    return saved ? JSON.parse(saved) : [];
+    const saved = safeLocalStorage.getItem('messmate_v2_expenses');
+    const existing = saved ? JSON.parse(saved) : [];
+    return ensureDefaultExpenses(existing);
   });
 
   const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('messmate_v2_settings');
+    const saved = safeLocalStorage.getItem('messmate_v2_settings');
     return saved ? JSON.parse(saved) : {
       president: 'Gururaj Hegde',
       secretary: 'Roshan Bhat',
@@ -59,68 +243,84 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'expenses' | 'settings'>('dashboard');
+  const [isEditingHeader, setIsEditingHeader] = useState(false);
+  const [headerEditValues, setHeaderEditValues] = useState({
+    month: '',
+    president: '',
+    secretary: ''
+  });
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('malnad_ultra_theme_v5');
-    return saved === 'dark';
+    const saved = safeLocalStorage.getItem('malnad_ultra_theme_v5');
+    return saved !== 'light';
   });
 
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('malnad_ultra_theme_v5', 'dark');
+      safeLocalStorage.setItem('malnad_ultra_theme_v5', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('malnad_ultra_theme_v5', 'light');
+      safeLocalStorage.setItem('malnad_ultra_theme_v5', 'light');
     }
   }, [isDarkMode]);
 
   // --- Persistence ---
   useEffect(() => {
-    localStorage.setItem('messmate_v2_members', JSON.stringify(members));
+    safeLocalStorage.setItem('messmate_v2_members', JSON.stringify(members));
   }, [members]);
 
   useEffect(() => {
-    localStorage.setItem('messmate_v2_expenses', JSON.stringify(expenses));
+    safeLocalStorage.setItem('messmate_v2_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    localStorage.setItem('messmate_v2_settings', JSON.stringify(settings));
+    safeLocalStorage.setItem('messmate_v2_settings', JSON.stringify(settings));
   }, [settings]);
 
   // --- Calculations ---
   const stats = useMemo(() => {
     const totalCommonMess = expenses
       .filter(e => e.category === 'commonMess')
-      .reduce((sum, e) => sum + e.amount, 0);
+      .reduce((sum, e) => sum + (e.isIncome ? -e.amount : e.amount), 0);
     
     const totalCommon = expenses
       .filter(e => e.category === 'common')
-      .reduce((sum, e) => sum + e.amount, 0);
+      .reduce((sum, e) => sum + (e.isIncome ? -e.amount : e.amount), 0);
 
     const totalMess = expenses
       .filter(e => e.category === 'mess')
       .reduce((sum, e) => sum + (e.isIncome ? -e.amount : e.amount), 0);
 
     const totalDays = members.reduce((sum, m) => sum + (m.daysStayed || 0), 0);
-    const numMembers = members.length;
+    const activeMembersCount = members.filter(m => (m.daysStayed || 0) > 0).length;
 
-    const commonMessPerHead = numMembers > 0 ? totalCommonMess / numMembers : 0;
-    const commonPerHead = numMembers > 0 ? totalCommon / numMembers : 0;
+    const commonMessPerHead = activeMembersCount > 0 ? totalCommonMess / activeMembersCount : 0;
+    const commonPerHead = activeMembersCount > 0 ? totalCommon / activeMembersCount : 0;
     const messPerDay = totalDays > 0 ? totalMess / totalDays : 0;
 
     const memberBills = members.map(member => {
-      const messBill = (member.daysStayed || 0) * messPerDay;
-      const rent = member.type === 'student' ? settings.studentRent : settings.jobRent;
+      const isActive = (member.daysStayed || 0) > 0;
+      const messBill = isActive ? (member.daysStayed || 0) * messPerDay : 0;
+      const rent = isActive 
+        ? (member.type === 'student' 
+          ? settings.studentRent 
+          : member.type === 'job' 
+            ? settings.jobRent 
+            : 0)
+        : 0;
+      
+      const commonMessBill = isActive ? commonMessPerHead : 0;
+      const commonBill = isActive ? commonPerHead : 0;
       
       return {
         ...member,
-        commonMessBill: commonMessPerHead,
-        commonBill: commonPerHead,
-        messBill: messBill,
-        rent: rent,
-        totalBill: commonMessPerHead + commonPerHead + messBill + rent
+        commonMessBill,
+        commonBill,
+        messBill,
+        rent,
+        totalBill: commonMessBill + commonBill + messBill + rent
       };
     });
 
@@ -143,16 +343,18 @@ export default function App() {
   const addMember = (name: string, type: MemberType, days: number) => {
     if (!name.trim()) return;
     const newMember: Member = { 
-      id: crypto.randomUUID(), 
+      id: generateId(), 
       name, 
       type, 
       daysStayed: days 
     };
-    setMembers([...members, newMember]);
+    const updated = [...members, newMember].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    setMembers(updated);
   };
 
   const updateMember = (id: string, updates: Partial<Member>) => {
-    setMembers(members.map(m => m.id === id ? { ...m, ...updates } : m));
+    const updated = members.map(m => m.id === id ? { ...m, ...updates } : m).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    setMembers(updated);
   };
 
   const removeMember = (id: string) => {
@@ -162,7 +364,7 @@ export default function App() {
   const addExpense = (amount: number, description: string, category: ExpenseCategory, isIncome: boolean = false) => {
     if (amount <= 0 || !description.trim()) return;
     const newExpense: Expense = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       amount,
       description,
       date: new Date().toISOString(),
@@ -181,9 +383,13 @@ export default function App() {
   };
 
   const clearAllExpenses = () => {
-    if (window.confirm('Are you sure you want to clear all expenses? This cannot be undone.')) {
-      setExpenses([]);
-      localStorage.setItem('messmate_v2_expenses', JSON.stringify([]));
+    const confirmClear = typeof window !== 'undefined' && typeof window.confirm === 'function' 
+      ? window.confirm('Are you sure you want to clear all expenses? This will reset all default items to ₹0 and delete any custom items.')
+      : true;
+
+    if (confirmClear) {
+      setExpenses(getDefaultExpenses());
+      safeLocalStorage.setItem('messmate_v2_expenses', JSON.stringify(getDefaultExpenses()));
     }
   };
 
@@ -197,12 +403,12 @@ export default function App() {
     };
     
     setMembers(DEFAULT_MEMBERS);
-    setExpenses([]);
+    setExpenses(getDefaultExpenses());
     setSettings(defaultSettings);
     
-    localStorage.setItem('messmate_v2_members', JSON.stringify(DEFAULT_MEMBERS));
-    localStorage.setItem('messmate_v2_expenses', JSON.stringify([]));
-    localStorage.setItem('messmate_v2_settings', JSON.stringify(defaultSettings));
+    safeLocalStorage.setItem('messmate_v2_members', JSON.stringify(DEFAULT_MEMBERS));
+    safeLocalStorage.setItem('messmate_v2_expenses', JSON.stringify(getDefaultExpenses()));
+    safeLocalStorage.setItem('messmate_v2_settings', JSON.stringify(defaultSettings));
     
     // Force a reload to ensure everything is clean
     window.location.reload();
@@ -289,7 +495,11 @@ export default function App() {
     doc.text('1. Common Mess Expenses', 14, 40);
     const commonMessData = expenses
       .filter(e => e.category === 'commonMess')
-      .map(e => [e.description, new Date(e.date).toLocaleDateString(), `Rs. ${e.amount.toLocaleString()}`]);
+      .map(e => [
+        e.isIncome ? `[INCOME] ${e.description}` : e.description, 
+        new Date(e.date).toLocaleDateString(), 
+        `${e.isIncome ? '-' : ''}Rs. ${e.amount.toLocaleString()}`
+      ]);
     
     autoTable(doc, {
       startY: 45,
@@ -307,7 +517,11 @@ export default function App() {
     doc.text('2. Common Expenses', 14, finalYCommonMess + 15);
     const commonData = expenses
       .filter(e => e.category === 'common')
-      .map(e => [e.description, new Date(e.date).toLocaleDateString(), `Rs. ${e.amount.toLocaleString()}`]);
+      .map(e => [
+        e.isIncome ? `[INCOME] ${e.description}` : e.description, 
+        new Date(e.date).toLocaleDateString(), 
+        `${e.isIncome ? '-' : ''}Rs. ${e.amount.toLocaleString()}`
+      ]);
 
     autoTable(doc, {
       startY: finalYCommonMess + 20,
@@ -354,65 +568,13 @@ export default function App() {
       {/* Decorative Background Graphics */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="malnad-pattern absolute inset-0" />
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-24 w-64 h-64 bg-brand-accent/3 rounded-full blur-3xl" />
         
-        {/* Soft Premium Gradient Orbs */}
-        <motion.div 
-          animate={{ 
-            x: [0, 100, 0], 
-            y: [0, -50, 0],
-            scale: [1, 1.2, 1]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[20%] -right-[10%] w-[60vw] h-[60vw] bg-brand-accent/5 rounded-full blur-[120px]" 
-        />
-        <motion.div 
-          animate={{ 
-            x: [0, -80, 0], 
-            y: [0, 60, 0],
-            scale: [1.2, 1, 1.2]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[20%] -left-[10%] w-[50vw] h-[50vw] bg-brand-accent/3 rounded-full blur-[100px]" 
-        />
-        <motion.div 
-          animate={{ 
-            x: [0, 50, 0], 
-            y: [0, 100, 0]
-          }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-[10%] left-[20%] w-[40vw] h-[40vw] bg-brand-accent/5 rounded-full blur-[100px]" 
-        />
-
-        {/* Subtle Floating Particles */}
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: [0, 0.2, 0],
-              y: [-20, -100],
-              x: Math.random() * 100 - 50
-            }}
-            transition={{ 
-              duration: 5 + Math.random() * 10, 
-              repeat: Infinity, 
-              delay: Math.random() * 10,
-              ease: "easeInOut"
-            }}
-            className="absolute w-1 h-1 bg-brand-accent rounded-full"
-            style={{ 
-              left: `${Math.random() * 100}%`, 
-              top: `${Math.random() * 100}%` 
-            }}
-          />
-        ))}
-        
-        {/* Abstract Architectural Lines */}
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
-          <div className="absolute top-0 left-[20%] w-px h-full bg-brand-accent" />
-          <div className="absolute top-0 left-[80%] w-px h-full bg-brand-accent" />
-          <div className="absolute top-[30%] left-0 w-full h-px bg-brand-accent" />
-        </div>
+        {/* Abstract Leaf Shape */}
+        <svg className="absolute bottom-0 right-0 w-[40vw] opacity-[0.03] text-brand-accent" viewBox="0 0 200 200" fill="currentColor">
+          <path d="M100 0C100 0 100 100 0 100C0 100 100 100 100 200C100 200 100 100 200 100C200 100 100 100 100 0Z" />
+        </svg>
       </div>
 
       {/* Header */}
@@ -436,24 +598,22 @@ export default function App() {
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            <nav className="hidden md:flex items-center p-1.5 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+          <div className="flex items-center gap-4">
+            <nav className="hidden md:flex items-center gap-1">
               <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={Calculator} label="Bill" />
               <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users} label="Members" />
               <TabButton active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} icon={Receipt} label="Expenses" />
               <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={Settings} label="Settings" />
             </nav>
             
-            <button 
+            <div className="hidden md:block h-6 w-px bg-black/10 dark:bg-white/10" />
+
+            <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 rounded-2xl transition-all flex items-center justify-center border border-black/10 dark:border-white/10 hover:border-brand-accent/50 hover:bg-brand-accent/5 group shadow-sm"
+              className="w-10 h-10 rounded-xl border border-black/10 dark:border-white/10 bg-card-bg hover:bg-black/5 dark:hover:bg-white/5 text-brand-accent hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-sm cursor-pointer"
               title={`Switch to ${isDarkMode ? 'Light' : 'Dark'} Mode`}
             >
-              {isDarkMode ? (
-                <Sun className="w-5 h-5 text-brand-accent group-hover:rotate-45 transition-transform duration-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-brand-accent group-hover:-rotate-12 transition-transform duration-500" />
-              )}
+              {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-brand-accent" />}
             </button>
           </div>
         </div>
@@ -483,8 +643,6 @@ export default function App() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 py-12 relative z-10">
-
-
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && (
             <motion.div 
@@ -494,33 +652,90 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-
-
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg/50 backdrop-blur-md p-10 rounded-[2.5rem] card-shadow border border-white/5 dark:border-white/10 gap-8">
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-accent/70">Statement for</p>
-                    <h2 className="text-4xl font-serif font-bold text-brand-primary tracking-tight">{settings.month}</h2>
-                  </div>
-                  <div className="flex flex-wrap gap-8 pt-2">
-                    <div className="space-y-1">
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">President</p>
-                      <p className="font-bold text-brand-primary flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-brand-accent shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                        {settings.president}
-                      </p>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
+                {isEditingHeader ? (
+                  <div className="flex flex-col gap-4 bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/5 w-full md:max-w-xl">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Month / Year</label>
+                      <input
+                        type="text"
+                        value={headerEditValues.month}
+                        onChange={(e) => setHeaderEditValues({ ...headerEditValues, month: e.target.value })}
+                        className="px-4 py-2.5 text-sm font-semibold rounded-xl border border-black/10 dark:border-white/10 bg-card-bg dark:bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all text-brand-primary"
+                        placeholder="e.g. January - 2026"
+                      />
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Secretary</p>
-                      <p className="font-bold text-brand-primary flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-brand-accent/40"></span>
-                        {settings.secretary}
-                      </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">President Name</label>
+                        <input
+                          type="text"
+                          value={headerEditValues.president}
+                          onChange={(e) => setHeaderEditValues({ ...headerEditValues, president: e.target.value })}
+                          className="px-4 py-2.5 text-sm font-semibold rounded-xl border border-black/10 dark:border-white/10 bg-card-bg dark:bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all text-brand-primary"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Secretary Name</label>
+                        <input
+                          type="text"
+                          value={headerEditValues.secretary}
+                          onChange={(e) => setHeaderEditValues({ ...headerEditValues, secretary: e.target.value })}
+                          className="px-4 py-2.5 text-sm font-semibold rounded-xl border border-black/10 dark:border-white/10 bg-card-bg dark:bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all text-brand-primary"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end pt-1">
+                      <button
+                        onClick={() => setIsEditingHeader(false)}
+                        className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-black/5 dark:bg-white/5 rounded-xl transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSettings({
+                            ...settings,
+                            month: headerEditValues.month,
+                            president: headerEditValues.president,
+                            secretary: headerEditValues.secretary
+                          });
+                          setIsEditingHeader(false);
+                        }}
+                        className="px-4 py-2 text-xs font-bold bg-brand-accent text-white rounded-xl hover:bg-brand-accent/90 transition-all flex items-center gap-1.5 shadow-md shadow-brand-accent/10"
+                      >
+                        <Check className="w-3.5 h-3.5" /> Save
+                      </button>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col gap-2 group relative">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-3xl font-serif font-bold text-brand-primary">{settings.month}</h2>
+                      <button
+                        onClick={() => {
+                          setHeaderEditValues({
+                            month: settings.month,
+                            president: settings.president,
+                            secretary: settings.secretary
+                          });
+                          setIsEditingHeader(true);
+                        }}
+                        className="opacity-60 group-hover:opacity-100 hover:scale-105 active:scale-95 p-2 text-brand-accent hover:bg-brand-accent/10 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                        title="Edit details directly"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        <span className="text-xs font-bold hidden sm:inline">Edit Info</span>
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-6 mt-2 text-sm text-gray-500">
+                      <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-accent"></span><span className="font-semibold text-brand-primary">President:</span> {settings.president}</p>
+                      <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-brand-accent/40"></span><span className="font-semibold text-brand-primary">Secretary:</span> {settings.secretary}</p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-3">
-                  <button onClick={exportPDF} className="flex items-center gap-2 px-6 py-3 bg-brand-accent text-black hover:bg-brand-accent/90 rounded-2xl transition-all text-sm font-bold shadow-[0_0_15px_rgba(0,255,102,0.4)]">
+                  <button onClick={exportPDF} className="flex items-center gap-2 px-6 py-3 bg-brand-accent text-white hover:bg-brand-accent/90 rounded-2xl transition-all text-sm font-bold shadow-lg shadow-brand-accent/20">
                     <FileText className="w-4 h-4" /> Download PDF
                   </button>
                   <button onClick={exportData} className="flex items-center gap-2 px-6 py-3 bg-card-bg dark:bg-brand-accent/10 border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-brand-accent/20 rounded-2xl transition-all text-sm font-bold">
@@ -546,15 +761,15 @@ export default function App() {
                   <p className="text-3xl font-bold tracking-tight">₹{stats.totalMess.toLocaleString()}</p>
                   <p className="text-xs text-gray-400 font-bold mt-2">₹{stats.messPerDay.toFixed(2)} / day</p>
                 </Card>
-                <Card title="Grand Total" icon={Calculator}>
+                <Card title="✦ Grand Total" icon={TrendingUp} className="bg-brand-accent text-white dark:bg-brand-accent dark:text-brand-bg" iconClassName="text-white dark:text-brand-bg" iconBgClassName="bg-white/10 dark:bg-brand-bg/10">
                   <p className="text-3xl font-bold tracking-tight">₹{stats.grandTotal.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 font-bold mt-2">{members.length} Members • {stats.totalDays} Days</p>
+                  <p className="text-xs text-white/70 font-bold mt-2">Total combined monthly bill amount</p>
                 </Card>
               </div>
 
               {/* Detailed Bill Table */}
               <Card title="Final Bill Statement" icon={Calculator} headerAction={
-                <button onClick={exportPDF} className="flex items-center gap-2 px-4 py-2 bg-brand-accent text-black hover:bg-brand-accent/90 rounded-xl transition-all text-xs font-bold shadow-[0_0_10px_rgba(0,255,102,0.4)]">
+                <button onClick={exportPDF} className="flex items-center gap-2 px-4 py-2 bg-brand-accent text-white hover:bg-brand-accent/90 rounded-xl transition-all text-xs font-bold shadow-lg shadow-brand-accent/20">
                   <FileText className="w-3.5 h-3.5" /> Download PDF
                 </button>
               }>
@@ -636,9 +851,10 @@ export default function App() {
                   <select name="type" className="px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all">
                     <option value="student">Student</option>
                     <option value="job">Job Holder</option>
+                    <option value="none">None</option>
                   </select>
-                  <input name="days" type="number" placeholder="Days Stayed" required className="px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
-                  <button className="bg-brand-accent text-black rounded-2xl font-bold hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,102,0.4)]">
+                  <input name="days" type="number" placeholder="Days Stayed" defaultValue="0" min="0" required className="px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
+                  <button className="bg-brand-accent text-white rounded-2xl font-bold hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
                     <Plus className="w-4 h-4" /> Add Member
                   </button>
                 </form>
@@ -685,6 +901,7 @@ export default function App() {
                         >
                           <option value="student">Student</option>
                           <option value="job">Job Holder</option>
+                          <option value="none">None</option>
                         </select>
                       </div>
                       <div className="flex justify-between items-center">
@@ -733,7 +950,8 @@ export default function App() {
                       const form = e.currentTarget;
                       const amount = parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value);
                       const desc = (form.elements.namedItem('desc') as HTMLInputElement).value;
-                      addExpense(amount, desc, 'commonMess');
+                      const isIncome = (form.elements.namedItem('isIncome') as HTMLInputElement)?.checked || false;
+                      addExpense(amount, desc, 'commonMess', isIncome);
                       form.reset();
                     }} className="space-y-3">
                       <input name="desc" list="common-mess-items" type="text" placeholder="Item (e.g. Cook Salary)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
@@ -744,6 +962,12 @@ export default function App() {
                         <option value="Garbage is comming" />
                       </datalist>
                       <input name="amount" type="number" step="0.01" placeholder="Amount (₹)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
+                      
+                      <div className="flex items-center gap-2 px-1">
+                        <input type="checkbox" name="isIncome" id="isIncome-commonMess" className="w-5 h-5 accent-brand-accent rounded-lg cursor-pointer" />
+                        <label htmlFor="isIncome-commonMess" className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none">This is Income</label>
+                      </div>
+
                       <button className="w-full bg-brand-accent text-white py-3 rounded-2xl font-bold text-sm hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
                         <Plus className="w-4 h-4" /> Add Item
                       </button>
@@ -751,7 +975,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'commonMess').map((expense) => (
-                        <div key={expense.id} className="flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group">
+                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group gap-4 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -762,8 +986,9 @@ export default function App() {
                               />
                               <input 
                                 type="number"
-                                className="w-16 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
-                                value={editingExpense.amount}
+                                className="w-20 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
+                                value={editingExpense.amount === 0 ? '' : editingExpense.amount}
+                                placeholder="0"
                                 onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
                               />
                               <div className="flex items-center gap-1 shrink-0">
@@ -777,18 +1002,36 @@ export default function App() {
                             </div>
                           ) : (
                             <>
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold truncate">{expense.description}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold truncate text-brand-primary flex items-center gap-1.5">
+                                  {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
+                                  {expense.isIncome && <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0 mr-1">Income</span>}
+                                  {expense.description}
+                                </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <span className="font-bold text-sm">₹{expense.amount.toLocaleString()}</span>
-                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent">
-                                    <Edit2 className="w-3 h-3" />
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-28 shrink-0 px-2.5 py-1.5 gap-1">
+                                  <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
+                                    {expense.isIncome ? '-' : ''}₹
+                                  </span>
+                                  <input 
+                                    type="number"
+                                    className={`w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 ${expense.isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-primary'}`}
+                                    value={expense.amount === 0 ? '' : expense.amount}
+                                    placeholder="0"
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      updateExpense(expense.id, { amount: val });
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent" title="Edit Item Name">
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500">
-                                    <Trash2 className="w-3 h-3" />
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete Item">
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -809,7 +1052,8 @@ export default function App() {
                       const form = e.currentTarget;
                       const amount = parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value);
                       const desc = (form.elements.namedItem('desc') as HTMLInputElement).value;
-                      addExpense(amount, desc, 'common');
+                      const isIncome = (form.elements.namedItem('isIncome') as HTMLInputElement)?.checked || false;
+                      addExpense(amount, desc, 'common', isIncome);
                       form.reset();
                     }} className="space-y-3">
                       <input name="desc" list="common-items" type="text" placeholder="Item (e.g. Currnt)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
@@ -820,6 +1064,12 @@ export default function App() {
                         <option value="Internet" />
                       </datalist>
                       <input name="amount" type="number" step="0.01" placeholder="Amount (₹)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
+                      
+                      <div className="flex items-center gap-2 px-1">
+                        <input type="checkbox" name="isIncome" id="isIncome-common" className="w-5 h-5 accent-brand-accent rounded-lg cursor-pointer" />
+                        <label htmlFor="isIncome-common" className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none">This is Income</label>
+                      </div>
+
                       <button className="w-full bg-brand-accent text-white py-3 rounded-2xl font-bold text-sm hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
                         <Plus className="w-4 h-4" /> Add Item
                       </button>
@@ -827,7 +1077,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'common').map((expense) => (
-                        <div key={expense.id} className="flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group">
+                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group gap-4 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -838,8 +1088,9 @@ export default function App() {
                               />
                               <input 
                                 type="number"
-                                className="w-16 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
-                                value={editingExpense.amount}
+                                className="w-20 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
+                                value={editingExpense.amount === 0 ? '' : editingExpense.amount}
+                                placeholder="0"
                                 onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
                               />
                               <div className="flex items-center gap-1 shrink-0">
@@ -853,18 +1104,36 @@ export default function App() {
                             </div>
                           ) : (
                             <>
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold truncate">{expense.description}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold truncate text-brand-primary flex items-center gap-1.5">
+                                  {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
+                                  {expense.isIncome && <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0 mr-1">Income</span>}
+                                  {expense.description}
+                                </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <span className="font-bold text-sm">₹{expense.amount.toLocaleString()}</span>
-                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent">
-                                    <Edit2 className="w-3 h-3" />
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-28 shrink-0 px-2.5 py-1.5 gap-1">
+                                  <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
+                                    {expense.isIncome ? '-' : ''}₹
+                                  </span>
+                                  <input 
+                                    type="number"
+                                    className={`w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 ${expense.isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-primary'}`}
+                                    value={expense.amount === 0 ? '' : expense.amount}
+                                    placeholder="0"
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      updateExpense(expense.id, { amount: val });
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent" title="Edit Item Name">
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500">
-                                    <Trash2 className="w-3 h-3" />
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete Item">
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -907,7 +1176,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'mess').map((expense) => (
-                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
+                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group gap-4 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -918,8 +1187,9 @@ export default function App() {
                               />
                               <input 
                                 type="number"
-                                className="w-16 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
-                                value={editingExpense.amount}
+                                className="w-20 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
+                                value={editingExpense.amount === 0 ? '' : editingExpense.amount}
+                                placeholder="0"
                                 onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
                               />
                               <div className="flex items-center gap-1 shrink-0">
@@ -933,23 +1203,36 @@ export default function App() {
                             </div>
                           ) : (
                             <>
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold truncate">
-                                  {expense.isIncome && <span className="text-emerald-600 mr-1">[INCOME]</span>}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold truncate text-brand-primary flex items-center gap-1.5">
+                                  {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
+                                  {expense.isIncome && <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0 mr-1">Income</span>}
                                   {expense.description}
                                 </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <span className={`font-bold text-sm ${expense.isIncome ? 'text-emerald-600' : ''}`}>
-                                  {expense.isIncome ? '-' : ''}₹{expense.amount.toLocaleString()}
-                                </span>
-                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent">
-                                    <Edit2 className="w-3 h-3" />
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-28 shrink-0 px-2.5 py-1.5 gap-1">
+                                  <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
+                                    {expense.isIncome ? '-' : ''}₹
+                                  </span>
+                                  <input 
+                                    type="number"
+                                    className={`w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 ${expense.isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-primary'}`}
+                                    value={expense.amount === 0 ? '' : expense.amount}
+                                    placeholder="0"
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      updateExpense(expense.id, { amount: val });
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent" title="Edit Item Name">
+                                    <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500">
-                                    <Trash2 className="w-3 h-3" />
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete Item">
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -973,7 +1256,29 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="max-w-2xl mx-auto space-y-8"
             >
-
+              <Card title="Display Settings" icon={isDarkMode ? Moon : Sun}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-brand-primary">Dark Theme</h3>
+                    <p className="text-sm text-gray-500">Switch between light and dark visual styles</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className={`w-14 h-8 rounded-full border-2 transition-all relative ${
+                      isDarkMode ? 'bg-brand-accent border-brand-accent' : 'bg-gray-100 border-gray-200'
+                    }`}
+                  >
+                    <motion.div 
+                      animate={{ x: isDarkMode ? 24 : 0 }}
+                      className={`w-6 h-6 rounded-full absolute top-0.5 left-0.5 shadow-sm flex items-center justify-center ${
+                        isDarkMode ? 'bg-brand-bg text-brand-accent' : 'bg-white text-gray-400'
+                      }`}
+                    >
+                      {isDarkMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                    </motion.div>
+                  </button>
+                </div>
+              </Card>
 
               <Card title="App Logo" icon={Home}>
                 <div className="flex flex-col items-center gap-4">
@@ -1070,8 +1375,6 @@ export default function App() {
       <footer className="max-w-6xl mx-auto px-6 py-16 text-center text-gray-400 text-sm">
         <p className="font-serif italic">© 2026 Malnad Mane • Professional Mess Management</p>
       </footer>
-
-
     </div>
   );
 }

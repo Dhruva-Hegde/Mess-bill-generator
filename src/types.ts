@@ -1,4 +1,4 @@
-export type MemberType = 'student' | 'job';
+export type MemberType = 'student' | 'job' | 'none';
 export type ExpenseCategory = 'commonMess' | 'common' | 'mess';
 
 export interface Member {
