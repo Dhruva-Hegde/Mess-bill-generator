@@ -579,7 +579,7 @@ export default function App() {
 
       {/* Header */}
       <header className="glass sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-card-bg rounded-xl flex items-center justify-center overflow-hidden shadow-lg shadow-brand-accent/10 border border-black/5 dark:border-white/5">
               <img 
@@ -642,7 +642,7 @@ export default function App() {
         ))}
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-12 relative z-10">
+      <main className="max-w-7xl mx-auto px-6 py-12 relative z-10">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && (
             <motion.div 
@@ -950,8 +950,7 @@ export default function App() {
                       const form = e.currentTarget;
                       const amount = parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value);
                       const desc = (form.elements.namedItem('desc') as HTMLInputElement).value;
-                      const isIncome = (form.elements.namedItem('isIncome') as HTMLInputElement)?.checked || false;
-                      addExpense(amount, desc, 'commonMess', isIncome);
+                      addExpense(amount, desc, 'commonMess', false);
                       form.reset();
                     }} className="space-y-3">
                       <input name="desc" list="common-mess-items" type="text" placeholder="Item (e.g. Cook Salary)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
@@ -963,11 +962,6 @@ export default function App() {
                       </datalist>
                       <input name="amount" type="number" step="0.01" placeholder="Amount (₹)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
                       
-                      <div className="flex items-center gap-2 px-1">
-                        <input type="checkbox" name="isIncome" id="isIncome-commonMess" className="w-5 h-5 accent-brand-accent rounded-lg cursor-pointer" />
-                        <label htmlFor="isIncome-commonMess" className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none">This is Income</label>
-                      </div>
-
                       <button className="w-full bg-brand-accent text-white py-3 rounded-2xl font-bold text-sm hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
                         <Plus className="w-4 h-4" /> Add Item
                       </button>
@@ -975,7 +969,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'commonMess').map((expense) => (
-                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group gap-4 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
+                        <div key={expense.id} className="flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-4">
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -1003,21 +997,17 @@ export default function App() {
                           ) : (
                             <>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary flex items-center gap-1.5">
-                                  {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
-                                  {expense.isIncome && <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0 mr-1">Income</span>}
+                                <p className="text-sm font-bold truncate text-brand-primary">
                                   {expense.description}
                                 </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-28 shrink-0 px-2.5 py-1.5 gap-1">
-                                  <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
-                                    {expense.isIncome ? '-' : ''}₹
-                                  </span>
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2 py-1.5 gap-1">
+                                  <span className="text-xs font-bold text-gray-400 select-none shrink-0">₹</span>
                                   <input 
                                     type="number"
-                                    className={`w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 ${expense.isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-primary'}`}
+                                    className="w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 text-brand-primary"
                                     value={expense.amount === 0 ? '' : expense.amount}
                                     placeholder="0"
                                     onChange={(e) => {
@@ -1052,8 +1042,7 @@ export default function App() {
                       const form = e.currentTarget;
                       const amount = parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value);
                       const desc = (form.elements.namedItem('desc') as HTMLInputElement).value;
-                      const isIncome = (form.elements.namedItem('isIncome') as HTMLInputElement)?.checked || false;
-                      addExpense(amount, desc, 'common', isIncome);
+                      addExpense(amount, desc, 'common', false);
                       form.reset();
                     }} className="space-y-3">
                       <input name="desc" list="common-items" type="text" placeholder="Item (e.g. Currnt)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
@@ -1065,11 +1054,6 @@ export default function App() {
                       </datalist>
                       <input name="amount" type="number" step="0.01" placeholder="Amount (₹)" required className="w-full px-5 py-3 text-sm rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
                       
-                      <div className="flex items-center gap-2 px-1">
-                        <input type="checkbox" name="isIncome" id="isIncome-common" className="w-5 h-5 accent-brand-accent rounded-lg cursor-pointer" />
-                        <label htmlFor="isIncome-common" className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none">This is Income</label>
-                      </div>
-
                       <button className="w-full bg-brand-accent text-white py-3 rounded-2xl font-bold text-sm hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
                         <Plus className="w-4 h-4" /> Add Item
                       </button>
@@ -1077,7 +1061,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'common').map((expense) => (
-                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group gap-4 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
+                        <div key={expense.id} className="flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-4">
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -1105,21 +1089,17 @@ export default function App() {
                           ) : (
                             <>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary flex items-center gap-1.5">
-                                  {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
-                                  {expense.isIncome && <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0 mr-1">Income</span>}
+                                <p className="text-sm font-bold truncate text-brand-primary">
                                   {expense.description}
                                 </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-28 shrink-0 px-2.5 py-1.5 gap-1">
-                                  <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
-                                    {expense.isIncome ? '-' : ''}₹
-                                  </span>
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2 py-1.5 gap-1">
+                                  <span className="text-xs font-bold text-gray-400 select-none shrink-0">₹</span>
                                   <input 
                                     type="number"
-                                    className={`w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 ${expense.isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-primary'}`}
+                                    className="w-full text-sm font-bold bg-transparent border-0 outline-none p-0 focus:ring-0 text-brand-primary"
                                     value={expense.amount === 0 ? '' : expense.amount}
                                     placeholder="0"
                                     onChange={(e) => {
@@ -1212,7 +1192,7 @@ export default function App() {
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-28 shrink-0 px-2.5 py-1.5 gap-1">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2 py-1.5 gap-1">
                                   <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
                                     {expense.isIncome ? '-' : ''}₹
                                   </span>
@@ -1372,7 +1352,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-6 py-16 text-center text-gray-400 text-sm">
+      <footer className="max-w-7xl mx-auto px-6 py-16 text-center text-gray-400 text-sm">
         <p className="font-serif italic">© 2026 Malnad Mane • Professional Mess Management</p>
       </footer>
     </div>
