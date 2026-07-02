@@ -16,7 +16,7 @@ export const Card = ({ children, title, icon: Icon, className = "", headerAction
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className={`bg-card-bg rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 p-8 ${className}`}
+    className={`bg-card-bg rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 p-5 sm:p-8 ${className}`}
   >
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-4">

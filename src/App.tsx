@@ -663,7 +663,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-5 sm:p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
                 {isEditingHeader ? (
                   <div className="flex flex-col gap-4 bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/5 w-full md:max-w-xl">
                     <div className="flex flex-col gap-1">
@@ -848,7 +848,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="max-w-4xl mx-auto space-y-8"
             >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-5 sm:p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
                 <div>
                   <h2 className="text-2xl font-serif font-bold text-brand-primary">Member Management</h2>
                   <p className="text-sm text-gray-500">Manage your flatmates, student/job statuses, and stayed days.</p>
@@ -953,7 +953,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-5 sm:p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
                 <div>
                   <h2 className="text-2xl font-serif font-bold text-brand-primary">Expense Management</h2>
                   <p className="text-sm text-gray-500">Manage all common and mess expenses for {settings.month}</p>
@@ -994,41 +994,43 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'commonMess').map((expense) => (
-                        <div key={expense.id} className="relative flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-3">
+                        <div key={expense.id} className="relative flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-black/5 dark:bg-white/5 rounded-xl group gap-3 w-full min-w-0">
                           {editingExpense?.id === expense.id ? (
-                            <div className="flex-1 flex gap-2 items-center min-w-0">
+                            <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center min-w-0 w-full">
                               <input 
                                 autoFocus
-                                className="flex-1 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none min-w-0"
+                                className="flex-1 text-sm font-bold bg-brand-bg px-2.5 py-1.5 rounded border border-black/10 dark:border-white/10 outline-none min-w-0 w-full"
                                 value={editingExpense.description}
                                 onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})}
                               />
-                              <input 
-                                type="number"
-                                className="w-20 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
-                                value={editingExpense.amount === 0 ? '' : editingExpense.amount}
-                                placeholder="0"
-                                onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
-                              />
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button onClick={() => { updateExpense(expense.id, editingExpense); setEditingExpense(null); }} className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => setEditingExpense(null)} className="p-1.5 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
+                              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                <input 
+                                  type="number"
+                                  className="flex-1 sm:w-20 text-sm font-bold bg-brand-bg px-2.5 py-1.5 rounded border border-black/10 dark:border-white/10 outline-none min-w-0"
+                                  value={editingExpense.amount === 0 ? '' : editingExpense.amount}
+                                  placeholder="0"
+                                  onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
+                                />
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button onClick={() => { updateExpense(expense.id, editingExpense); setEditingExpense(null); }} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => setEditingExpense(null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ) : (
                             <>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary" title={expense.description}>
+                              <div className="min-w-0 w-full sm:flex-1">
+                                <p className="text-sm font-bold text-brand-primary break-words [word-break:break-word] [overflow-wrap:anywhere] whitespace-normal" title={expense.description}>
                                   {expense.description}
                                 </p>
-                                <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-20 shrink-0 px-2 py-1.5 gap-1">
+                              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t border-black/5 dark:border-white/5 sm:border-t-0">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2.5 py-1.5 gap-1.5">
                                   <span className="text-xs font-bold text-gray-400 select-none shrink-0">₹</span>
                                   <input 
                                     type="number"
@@ -1041,12 +1043,12 @@ export default function App() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
-                                    <Edit2 className="w-3.5 h-3.5" />
+                                <div className="flex gap-1.5 opacity-100 sm:opacity-40 sm:group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1.5 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
+                                    <Edit2 className="w-4 h-4" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
                               </div>
@@ -1086,41 +1088,43 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'common').map((expense) => (
-                        <div key={expense.id} className="relative flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-3">
+                        <div key={expense.id} className="relative flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-black/5 dark:bg-white/5 rounded-xl group gap-3 w-full min-w-0">
                           {editingExpense?.id === expense.id ? (
-                            <div className="flex-1 flex gap-2 items-center min-w-0">
+                            <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center min-w-0 w-full">
                               <input 
                                 autoFocus
-                                className="flex-1 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none min-w-0"
+                                className="flex-1 text-sm font-bold bg-brand-bg px-2.5 py-1.5 rounded border border-black/10 dark:border-white/10 outline-none min-w-0 w-full"
                                 value={editingExpense.description}
                                 onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})}
                               />
-                              <input 
-                                type="number"
-                                className="w-20 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
-                                value={editingExpense.amount === 0 ? '' : editingExpense.amount}
-                                placeholder="0"
-                                onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
-                              />
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button onClick={() => { updateExpense(expense.id, editingExpense); setEditingExpense(null); }} className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => setEditingExpense(null)} className="p-1.5 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
+                              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                <input 
+                                  type="number"
+                                  className="flex-1 sm:w-20 text-sm font-bold bg-brand-bg px-2.5 py-1.5 rounded border border-black/10 dark:border-white/10 outline-none min-w-0"
+                                  value={editingExpense.amount === 0 ? '' : editingExpense.amount}
+                                  placeholder="0"
+                                  onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
+                                />
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button onClick={() => { updateExpense(expense.id, editingExpense); setEditingExpense(null); }} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => setEditingExpense(null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ) : (
                             <>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary" title={expense.description}>
+                              <div className="min-w-0 w-full sm:flex-1">
+                                <p className="text-sm font-bold text-brand-primary break-words [word-break:break-word] [overflow-wrap:anywhere] whitespace-normal" title={expense.description}>
                                   {expense.description}
                                 </p>
-                                <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-20 shrink-0 px-2 py-1.5 gap-1">
+                              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t border-black/5 dark:border-white/5 sm:border-t-0">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2.5 py-1.5 gap-1.5">
                                   <span className="text-xs font-bold text-gray-400 select-none shrink-0">₹</span>
                                   <input 
                                     type="number"
@@ -1133,12 +1137,12 @@ export default function App() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
-                                    <Edit2 className="w-3.5 h-3.5" />
+                                <div className="flex gap-1.5 opacity-100 sm:opacity-40 sm:group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1.5 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
+                                    <Edit2 className="w-4 h-4" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
                               </div>
@@ -1181,49 +1185,51 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'mess').map((expense) => (
-                        <div key={expense.id} className={`relative flex justify-between items-center p-3 rounded-xl group gap-3 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
+                        <div key={expense.id} className={`relative flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl group gap-3 w-full min-w-0 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
                           {editingExpense?.id === expense.id ? (
-                            <div className="flex-1 flex gap-2 items-center min-w-0">
+                            <div className="flex-1 flex flex-col sm:flex-row gap-2 sm:items-center min-w-0 w-full">
                               <input 
                                 autoFocus
-                                className="flex-1 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none min-w-0"
+                                className="flex-1 text-sm font-bold bg-brand-bg px-2.5 py-1.5 rounded border border-black/10 dark:border-white/10 outline-none min-w-0 w-full"
                                 value={editingExpense.description}
                                 onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})}
                               />
-                              <input 
-                                type="number"
-                                className="w-20 text-sm font-bold bg-brand-bg px-2 py-1 rounded border border-black/10 dark:border-white/10 outline-none shrink-0"
-                                value={editingExpense.amount === 0 ? '' : editingExpense.amount}
-                                placeholder="0"
-                                onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
-                              />
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button onClick={() => { updateExpense(expense.id, editingExpense); setEditingExpense(null); }} className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button onClick={() => setEditingExpense(null)} className="p-1.5 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
+                              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                                <input 
+                                  type="number"
+                                  className="flex-1 sm:w-20 text-sm font-bold bg-brand-bg px-2.5 py-1.5 rounded border border-black/10 dark:border-white/10 outline-none min-w-0"
+                                  value={editingExpense.amount === 0 ? '' : editingExpense.amount}
+                                  placeholder="0"
+                                  onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
+                                />
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button onClick={() => { updateExpense(expense.id, editingExpense); setEditingExpense(null); }} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => setEditingExpense(null)} className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ) : (
                             <>
-                              <div className="min-w-0 flex-1">
-                                <div className="text-sm font-bold text-brand-primary flex items-center gap-1.5 min-w-0">
+                              <div className="min-w-0 w-full sm:flex-1">
+                                <div className="text-sm font-bold text-brand-primary flex flex-wrap items-center gap-1.5 w-full min-w-0">
                                   {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
                                   {expense.isIncome && (
                                     <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0">
                                       Income
                                     </span>
                                   )}
-                                  <span className="truncate min-w-0 flex-1" title={expense.description}>
+                                  <span className="min-w-0 flex-1 break-words [word-break:break-word] [overflow-wrap:anywhere] whitespace-normal" title={expense.description}>
                                     {expense.description}
                                   </span>
                                 </div>
-                                <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-20 shrink-0 px-2 py-1.5 gap-1">
+                              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2.5 sm:pt-0 border-t border-black/5 dark:border-white/5 sm:border-t-0">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2.5 py-1.5 gap-1.5">
                                   <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
                                     {expense.isIncome ? '-' : ''}₹
                                   </span>
@@ -1238,12 +1244,12 @@ export default function App() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
-                                    <Edit2 className="w-3.5 h-3.5" />
+                                <div className="flex gap-1.5 opacity-100 sm:opacity-40 sm:group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1.5 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
+                                    <Edit2 className="w-4 h-4" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
                               </div>
