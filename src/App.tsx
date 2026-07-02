@@ -189,9 +189,9 @@ export default function App() {
 
     let modified = false;
     
-    // Convert any legacy 30 days stayed to 0 as the new default
+    // Convert any legacy or existing days stayed to 0 as requested
     list = list.map(m => {
-      if (m.daysStayed === 30) {
+      if (m.daysStayed !== 0) {
         modified = true;
         return { ...m, daysStayed: 0 };
       }
@@ -390,6 +390,17 @@ export default function App() {
     if (confirmClear) {
       setExpenses(getDefaultExpenses());
       safeLocalStorage.setItem('messmate_v2_expenses', JSON.stringify(getDefaultExpenses()));
+    }
+  };
+
+  const resetAllDaysToZero = () => {
+    const confirmReset = typeof window !== 'undefined' && typeof window.confirm === 'function' 
+      ? window.confirm('Are you sure you want to reset all members\' days stayed to 0?')
+      : true;
+
+    if (confirmReset) {
+      const updated = members.map(m => ({ ...m, daysStayed: 0 }));
+      setMembers(updated);
     }
   };
 
@@ -837,13 +848,26 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="max-w-4xl mx-auto space-y-8"
             >
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card-bg p-8 rounded-[2rem] card-shadow border border-black/5 dark:border-white/5 gap-6">
+                <div>
+                  <h2 className="text-2xl font-serif font-bold text-brand-primary">Member Management</h2>
+                  <p className="text-sm text-gray-500">Manage your flatmates, student/job statuses, and stayed days.</p>
+                </div>
+                <button 
+                  onClick={resetAllDaysToZero}
+                  className="flex items-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 rounded-2xl transition-all text-sm font-bold"
+                >
+                  <RotateCcw className="w-4 h-4" /> Reset All Days to 0
+                </button>
+              </div>
+
               <Card title="Add New Member" icon={Users}>
                 <form onSubmit={(e) => {
                   e.preventDefault();
                   const form = e.currentTarget;
                   const name = (form.elements.namedItem('name') as HTMLInputElement).value;
                   const type = (form.elements.namedItem('type') as HTMLSelectElement).value as MemberType;
-                  const days = parseInt((form.elements.namedItem('days') as HTMLInputElement).value);
+                  const days = parseInt((form.elements.namedItem('days') as HTMLInputElement).value) || 0;
                   addMember(name, type, days);
                   form.reset();
                 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -853,7 +877,7 @@ export default function App() {
                     <option value="job">Job Holder</option>
                     <option value="none">None</option>
                   </select>
-                  <input name="days" type="number" placeholder="Days Stayed" defaultValue="0" min="0" required className="px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
+                  <input name="days" type="number" placeholder="Days Stayed" min="0" required className="px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all" />
                   <button className="bg-brand-accent text-white rounded-2xl font-bold hover:bg-brand-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">
                     <Plus className="w-4 h-4" /> Add Member
                   </button>
@@ -908,7 +932,8 @@ export default function App() {
                         <span className="text-sm text-gray-500">Days Stayed</span>
                         <input 
                           type="number" 
-                          value={member.daysStayed} 
+                          value={member.daysStayed === 0 ? '' : member.daysStayed} 
+                          placeholder="0"
                           onChange={(e) => updateMember(member.id, { daysStayed: parseInt(e.target.value) || 0 })}
                           className="w-20 text-right font-bold bg-black/5 px-3 py-1 rounded-lg outline-none"
                         />
@@ -969,7 +994,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'commonMess').map((expense) => (
-                        <div key={expense.id} className="flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-4">
+                        <div key={expense.id} className="relative flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-3">
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -997,13 +1022,13 @@ export default function App() {
                           ) : (
                             <>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary">
+                                <p className="text-sm font-bold truncate text-brand-primary" title={expense.description}>
                                   {expense.description}
                                 </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2 py-1.5 gap-1">
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-20 shrink-0 px-2 py-1.5 gap-1">
                                   <span className="text-xs font-bold text-gray-400 select-none shrink-0">₹</span>
                                   <input 
                                     type="number"
@@ -1016,11 +1041,11 @@ export default function App() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent" title="Edit Item Name">
+                                <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete Item">
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
@@ -1061,7 +1086,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'common').map((expense) => (
-                        <div key={expense.id} className="flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-4">
+                        <div key={expense.id} className="relative flex justify-between items-center p-3 bg-black/5 dark:bg-white/5 rounded-xl group gap-3">
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -1089,13 +1114,13 @@ export default function App() {
                           ) : (
                             <>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary">
+                                <p className="text-sm font-bold truncate text-brand-primary" title={expense.description}>
                                   {expense.description}
                                 </p>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2 py-1.5 gap-1">
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-20 shrink-0 px-2 py-1.5 gap-1">
                                   <span className="text-xs font-bold text-gray-400 select-none shrink-0">₹</span>
                                   <input 
                                     type="number"
@@ -1108,11 +1133,11 @@ export default function App() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent" title="Edit Item Name">
+                                <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete Item">
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
@@ -1156,7 +1181,7 @@ export default function App() {
 
                     <div className="mt-6 space-y-2 max-h-[400px] overflow-y-auto pr-2">
                       {expenses.filter(e => e.category === 'mess').map((expense) => (
-                        <div key={expense.id} className={`flex justify-between items-center p-3 rounded-xl group gap-4 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
+                        <div key={expense.id} className={`relative flex justify-between items-center p-3 rounded-xl group gap-3 ${expense.isIncome ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/5 dark:bg-white/5'}`}>
                           {editingExpense?.id === expense.id ? (
                             <div className="flex-1 flex gap-2 items-center min-w-0">
                               <input 
@@ -1184,15 +1209,21 @@ export default function App() {
                           ) : (
                             <>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold truncate text-brand-primary flex items-center gap-1.5">
+                                <div className="text-sm font-bold text-brand-primary flex items-center gap-1.5 min-w-0">
                                   {expense.isIncome && <Check className="w-4 h-4 text-emerald-500 shrink-0" />}
-                                  {expense.isIncome && <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0 mr-1">Income</span>}
-                                  {expense.description}
-                                </p>
+                                  {expense.isIncome && (
+                                    <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wider shrink-0">
+                                      Income
+                                    </span>
+                                  )}
+                                  <span className="truncate min-w-0 flex-1" title={expense.description}>
+                                    {expense.description}
+                                  </span>
+                                </div>
                                 <p className="text-[10px] text-gray-400">{new Date(expense.date).toLocaleDateString()}</p>
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-24 shrink-0 px-2 py-1.5 gap-1">
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex items-center bg-brand-bg/60 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 transition-all w-20 shrink-0 px-2 py-1.5 gap-1">
                                   <span className={`text-xs font-bold ${expense.isIncome ? 'text-emerald-500' : 'text-gray-400'} select-none shrink-0`}>
                                     {expense.isIncome ? '-' : ''}₹
                                   </span>
@@ -1207,11 +1238,11 @@ export default function App() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex gap-1 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
-                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent" title="Edit Item Name">
+                                <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                                  <button onClick={() => setEditingExpense(expense)} className="p-1 text-gray-400 hover:text-brand-accent rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Edit Item Name">
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500" title="Delete Item">
+                                  <button onClick={() => removeExpense(expense.id)} className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors" title="Delete Item">
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
@@ -1236,30 +1267,6 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="max-w-2xl mx-auto space-y-8"
             >
-              <Card title="Display Settings" icon={isDarkMode ? Moon : Sun}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-brand-primary">Dark Theme</h3>
-                    <p className="text-sm text-gray-500">Switch between light and dark visual styles</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsDarkMode(!isDarkMode)}
-                    className={`w-14 h-8 rounded-full border-2 transition-all relative ${
-                      isDarkMode ? 'bg-brand-accent border-brand-accent' : 'bg-gray-100 border-gray-200'
-                    }`}
-                  >
-                    <motion.div 
-                      animate={{ x: isDarkMode ? 24 : 0 }}
-                      className={`w-6 h-6 rounded-full absolute top-0.5 left-0.5 shadow-sm flex items-center justify-center ${
-                        isDarkMode ? 'bg-brand-bg text-brand-accent' : 'bg-white text-gray-400'
-                      }`}
-                    >
-                      {isDarkMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                    </motion.div>
-                  </button>
-                </div>
-              </Card>
-
               <Card title="App Logo" icon={Home}>
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-32 h-32 bg-card-bg rounded-3xl overflow-hidden shadow-xl border border-black/5 dark:border-white/5">
@@ -1280,35 +1287,6 @@ export default function App() {
 
               <Card title="Bill Configuration" icon={Settings}>
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">President Name</label>
-                      <input 
-                        type="text" 
-                        value={settings.president} 
-                        onChange={(e) => setSettings({ ...settings, president: e.target.value })}
-                        className="w-full px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Secretary Name</label>
-                      <input 
-                        type="text" 
-                        value={settings.secretary} 
-                        onChange={(e) => setSettings({ ...settings, secretary: e.target.value })}
-                        className="w-full px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Month/Year</label>
-                    <input 
-                      type="text" 
-                      value={settings.month} 
-                      onChange={(e) => setSettings({ ...settings, month: e.target.value })}
-                      className="w-full px-6 py-4 rounded-2xl border border-black/5 bg-brand-bg focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all"
-                    />
-                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Student Rent (₹)</label>
